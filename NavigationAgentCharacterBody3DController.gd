@@ -46,7 +46,7 @@ func _process(delta: float) -> void:
 		if abs(camera_direction.x) >= .8:
 			gimble_y_rotation = camera_direction.x * joystick_camera_sensitivity
 		elif abs(camera_direction.y) >= 1:
-			gimble_x_rotation = camera_direction.y * -1 * joystick_camera_sensitivity
+			gimble_x_rotation = camera_direction.y * joystick_camera_sensitivity
 	
 	## Apply camera yaw rotation (y axis rotation)
 	var current_y_rotation = yaw_origin.rotation.y
