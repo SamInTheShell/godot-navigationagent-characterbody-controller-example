@@ -1,6 +1,6 @@
 extends CharacterBody3D
 
-
+@export var  joystick_camera_sensitivity = 0.5
 @export var mouse_sensitivity : float = 5.0
 @export var speed = 5.0
 @export var jump_velocity = 4.5
@@ -18,9 +18,11 @@ var last_valid_location_in_navmesh: Vector3
 var gimble_y_rotation : float
 var gimble_x_rotation : float
 var jumping: bool = false
+var is_keyboard_and_mouse: bool = true
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	
 
 func _process(delta: float) -> void:
 	## Respawn player upon falling off the map
@@ -35,31 +37,40 @@ func _process(delta: float) -> void:
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-	## Apply mouse movement to gimble rotation
-	if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		## Apply camera yaw rotation (y axis rotation)
-		var current_y_rotation = yaw_origin.rotation.y
-		yaw_origin.rotation.y = lerpf(
-				current_y_rotation,
-				current_y_rotation - gimble_y_rotation,
-				mouse_sensitivity * delta
-			)
-		# Consume the yaw input
-		gimble_y_rotation = 0
-		
-		## Apply camera pitch rotation (x axis rotation)
-		var current_x_rotation = pitch_origin.rotation.x
-		pitch_origin.rotation.x = lerpf(
-				current_x_rotation, 
-				clamp(
-					current_x_rotation - gimble_x_rotation,
-					deg_to_rad(min_camera_yaw),
-					deg_to_rad(max_camera_yaw)
-				),
-				mouse_sensitivity * delta
-			)
-		# Consume the pitch input
-		gimble_x_rotation = 0
+	
+	#print(Input.get_action_strength("trigger_r"))
+	#print(Input.get_action_strength("trigger_l"))
+	
+	var camera_direction = Vector2(Input.get_axis("thumbstick_l_left", "thumbstick_l_right"), Input.get_axis("thumbstick_l_up", "thumbstick_l_down"))
+	if camera_direction != Vector2.ZERO:
+		if abs(camera_direction.x) >= .8:
+			gimble_y_rotation = camera_direction.x * joystick_camera_sensitivity
+		elif abs(camera_direction.y) >= 1:
+			gimble_x_rotation = camera_direction.y * -1 * joystick_camera_sensitivity
+	
+	## Apply camera yaw rotation (y axis rotation)
+	var current_y_rotation = yaw_origin.rotation.y
+	yaw_origin.rotation.y = lerpf(
+			current_y_rotation,
+			current_y_rotation - gimble_y_rotation,
+			mouse_sensitivity * delta
+		)
+	# Consume the yaw input
+	gimble_y_rotation = 0
+	
+	## Apply camera pitch rotation (x axis rotation)
+	var current_x_rotation = pitch_origin.rotation.x
+	pitch_origin.rotation.x = lerpf(
+			current_x_rotation, 
+			clamp(
+				current_x_rotation - gimble_x_rotation,
+				deg_to_rad(min_camera_yaw),
+				deg_to_rad(max_camera_yaw)
+			),
+			mouse_sensitivity * delta
+		)
+	# Consume the pitch input
+	gimble_x_rotation = 0
 
 
 func _physics_process(delta: float) -> void:
@@ -136,8 +147,14 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _input(event):
+	if event is InputEventMouse or event is InputEventKey:
+		is_keyboard_and_mouse = true
+	
+	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		is_keyboard_and_mouse = false
+	
 	## Handle mouse input
-	if event is InputEventMouseButton:
+	if event is InputEventMouseButton && is_keyboard_and_mouse:
 		## Ensure mouse capture
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -155,10 +172,12 @@ func _input(event):
 		
 	
 	## Handle mouse movement input
-	if event is InputEventMouseMotion:
-		## Add y rotation to camera gimble (Yaw)
-		gimble_y_rotation = event.relative.normalized().x
-		## Add x rotation to camera gimble (Pitch)
-		# TODO: Clamp this ?
-		gimble_x_rotation = event.relative.normalized().y
-		
+	if event is InputEventMouseMotion && is_keyboard_and_mouse:
+		## Apply mouse movement to gimble rotation
+		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+			## Add y rotation to camera gimble (Yaw)
+			gimble_y_rotation = event.relative.normalized().x
+			## Add x rotation to camera gimble (Pitch)
+			# TODO: Clamp this ?
+			gimble_x_rotation = event.relative.normalized().y
+			

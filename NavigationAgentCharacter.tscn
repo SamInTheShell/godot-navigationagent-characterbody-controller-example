@@ -27,7 +27,7 @@ clearcoat_enabled = true
 clearcoat_roughness = 1.0
 
 [node name="NavigationAgentCharacterBody3D" type="CharacterBody3D"]
-floor_max_angle = 3.14159
+floor_max_angle = 1.48353
 script = ExtResource("1_g3rio")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
