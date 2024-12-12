@@ -20,7 +20,31 @@ var gimble_x_rotation : float
 var jumping: bool = false
 var is_keyboard_and_mouse: bool = true
 
+const device_id: int = 0
+
 func _ready() -> void:
+	## Listing all of the controllers because there's a problem with input mappings
+	#  On Xbox controller, what I observed was that my trigger buttons were activating
+	#  the right thumbstick x axis.
+	#  When I listed this I saw 2 devices for my single controller.
+	#  I updated the devices to be just device 0 and it worked fine.
+	#  I no longer trust the input map in project settings.
+	#
+	#  TODO:
+	#  Build an action mapping system. 
+	#  Most games need to switch between control modes, just need a better version of input map.
+	#  For now, just testing with device id set manually in the input settings.
+	var connected_joypads = Input.get_connected_joypads()
+	if connected_joypads.size() == 0:
+		print("No controllers connected.")
+	else:
+		print("Connected controllers:")
+		for device_id in connected_joypads:
+			# Print joypad ID and name
+			var joypad_name = Input.get_joy_name(device_id)
+			print("    Device ID: ", device_id, " - Name: ", joypad_name)
+
+	## Start off in captured mouse mode.
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	
 
@@ -37,16 +61,14 @@ func _process(delta: float) -> void:
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-	
-	#print(Input.get_action_strength("trigger_r"))
-	#print(Input.get_action_strength("trigger_l"))
+	#print(Input.get_action_strength("trigger_r"), ", ", Input.get_action_strength("trigger_l"))
 	
 	var camera_direction = Vector2(Input.get_axis("thumbstick_l_left", "thumbstick_l_right"), Input.get_axis("thumbstick_l_up", "thumbstick_l_down"))
 	if camera_direction != Vector2.ZERO:
-		if abs(camera_direction.x) >= .8:
-			gimble_y_rotation = camera_direction.x * joystick_camera_sensitivity
-		elif abs(camera_direction.y) >= 1:
-			gimble_x_rotation = camera_direction.y * joystick_camera_sensitivity
+		#if abs(camera_direction.x) >= .5:
+		gimble_y_rotation = camera_direction.x * joystick_camera_sensitivity
+		#if abs(camera_direction.y) >= .5:
+		gimble_x_rotation = camera_direction.y * joystick_camera_sensitivity
 	
 	## Apply camera yaw rotation (y axis rotation)
 	var current_y_rotation = yaw_origin.rotation.y
@@ -83,7 +105,7 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * delta
 	
 	## Apply movement input
-	var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down") # TODO: investigate interesting behavoir later
+	var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 
 	## Build heading from camera position data
 	# Gather forward and right vectors
