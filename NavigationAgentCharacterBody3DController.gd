@@ -1,7 +1,11 @@
 extends CharacterBody3D
 
-@export var  joystick_camera_sensitivity = 0.5
-@export var mouse_sensitivity : float = 5.0
+@export var camera_speed_yaw = 5.0
+@export var camera_speed_pitch = 3.5
+@export var  joystick_camera_sensitivity_x = 1
+@export var  joystick_camera_sensitivity_y = .5
+@export var mouse_sensitivity_x : float = 1
+@export var mouse_sensitivity_y : float = .5
 @export var speed = 5.0
 @export var jump_velocity = 4.5
 @export var min_camera_yaw: float = -50.0
@@ -61,21 +65,23 @@ func _process(delta: float) -> void:
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-	#print(Input.get_action_strength("trigger_r"), ", ", Input.get_action_strength("trigger_l"))
+	var camera_direction = Vector2(
+			Input.get_axis("right_thumbstick_left", "right_thumbstick_right"),
+			Input.get_axis("right_thumbstick_up", "right_thumbstick_down")
+		)
 	
-	var camera_direction = Vector2(Input.get_axis("thumbstick_l_left", "thumbstick_l_right"), Input.get_axis("thumbstick_l_up", "thumbstick_l_down"))
 	if camera_direction != Vector2.ZERO:
 		#if abs(camera_direction.x) >= .5:
-		gimble_y_rotation = camera_direction.x * joystick_camera_sensitivity
+		gimble_y_rotation = camera_direction.x * joystick_camera_sensitivity_x
 		#if abs(camera_direction.y) >= .5:
-		gimble_x_rotation = camera_direction.y * joystick_camera_sensitivity
+		gimble_x_rotation = camera_direction.y * joystick_camera_sensitivity_y
 	
 	## Apply camera yaw rotation (y axis rotation)
 	var current_y_rotation = yaw_origin.rotation.y
 	yaw_origin.rotation.y = lerpf(
 			current_y_rotation,
 			current_y_rotation - gimble_y_rotation,
-			mouse_sensitivity * delta
+			camera_speed_yaw * delta
 		)
 	# Consume the yaw input
 	gimble_y_rotation = 0
@@ -89,7 +95,7 @@ func _process(delta: float) -> void:
 				deg_to_rad(min_camera_yaw),
 				deg_to_rad(max_camera_yaw)
 			),
-			mouse_sensitivity * delta
+			camera_speed_pitch * delta
 		)
 	# Consume the pitch input
 	gimble_x_rotation = 0
@@ -198,8 +204,8 @@ func _input(event):
 		## Apply mouse movement to gimble rotation
 		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			## Add y rotation to camera gimble (Yaw)
-			gimble_y_rotation = event.relative.normalized().x
+			gimble_y_rotation = event.relative.normalized().x * mouse_sensitivity_x
 			## Add x rotation to camera gimble (Pitch)
 			# TODO: Clamp this ?
-			gimble_x_rotation = event.relative.normalized().y
+			gimble_x_rotation = event.relative.normalized().y * mouse_sensitivity_y
 			
